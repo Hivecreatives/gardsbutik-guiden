@@ -2,21 +2,21 @@
 
 import * as React from "react";
 import {
-  IconCamera,
-  IconChartBar,
   IconDashboard,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconFolder,
-  IconHelp,
-  IconInnerShadowTop,
   IconListDetails,
-  IconReport,
-  IconSearch,
-  IconSettings,
+  IconChartBar,
   IconUsers,
+  IconBuildingStore,
+  IconPackage,
+  IconPhoto,
+  IconClock,
+  IconHeart,
+  IconUser,
+  IconSettings,
+  IconHelp,
+  IconSearch,
+  IconInnerShadowTop,
+  IconLeaf,
 } from "@tabler/icons-react";
 
 import { useUser } from "@/hooks/useUser";
@@ -33,120 +33,56 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const data = {
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "#",
-      icon: <IconDashboard />,
-    },
-    {
-      title: "Farm Approvals",
-      url: "#",
-      icon: <IconListDetails />,
-    },
-    {
-      title: "Analytics",
-      url: "#",
-      icon: <IconChartBar />,
-    },
-    {
-      title: "User Management",
-      url: "#",
-      icon: <IconFolder />,
-    },
-    {
-      title: "Products",
-      url: "#",
-      icon: <IconUsers />,
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: <IconCamera />,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: <IconFileDescription />,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: <IconFileAi />,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: <IconSettings />,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: <IconHelp />,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: <IconSearch />,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: <IconDatabase />,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: <IconReport />,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: <IconFileWord />,
-    },
-  ],
-};
+const adminNav = [
+  { title: "Dashboard", url: "/dashboard/admin", icon: <IconDashboard /> },
+  {
+    title: "Farm Approvals",
+    url: "/dashboard/admin/approvals",
+    icon: <IconListDetails />,
+  },
+  {
+    title: "Analytics",
+    url: "/dashboard/admin/analytics",
+    icon: <IconChartBar />,
+  },
+  {
+    title: "User Management",
+    url: "/dashboard/admin/users",
+    icon: <IconUsers />,
+  },
+];
+
+const farmOwnerNav = [
+  { title: "My Farms", url: "/dashboard/farm", icon: <IconBuildingStore /> },
+  { title: "Products", url: "/dashboard/farm/products", icon: <IconPackage /> },
+  { title: "Images", url: "/dashboard/farm/images", icon: <IconPhoto /> },
+  {
+    title: "Opening Hours",
+    url: "/dashboard/farm/opening-hours",
+    icon: <IconClock />,
+  },
+];
+
+const userNav = [
+  {
+    title: "My Favorites",
+    url: "/dashboard/user/favorites",
+    icon: <IconHeart />,
+  },
+  { title: "My Profile", url: "/dashboard/user/profile", icon: <IconUser /> },
+];
+
+const navSecondary = [
+  { title: "Settings", url: "#", icon: <IconSettings /> },
+  { title: "Get Help", url: "#", icon: <IconHelp /> },
+  { title: "Search", url: "#", icon: <IconSearch /> },
+];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { profile } = useUser();
+  const { profile, isAdmin, isFarmOwner } = useUser();
+
+  const navItems = isAdmin ? adminNav : isFarmOwner ? farmOwnerNav : userNav;
+
   const userData = {
     name: profile?.full_name ?? undefined,
     email: profile?.email ?? undefined,
@@ -162,8 +98,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="#">
-                <IconInnerShadowTop className="size-5!" />
+              <a href="/dashboard">
+                <IconLeaf className="size-5!" />
                 <span className="text-base font-semibold">
                   Gårdsbutik Guiden
                 </span>
@@ -172,11 +108,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
 
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+      <SidebarContent>
+        <NavMain items={navItems} />
+        <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
+
       <SidebarFooter>
         <NavUser user={userData} />
       </SidebarFooter>
