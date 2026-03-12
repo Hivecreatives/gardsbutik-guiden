@@ -1,6 +1,7 @@
+"use client";
+
 import {
   ArrowRight,
-  Box,
   CircleCheck,
   Clock,
   Eye,
@@ -13,35 +14,13 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { FarmPageActions } from "@/components/farm-page-actions";
+import { useFarm } from "@/hooks/useFarm";
+import { useUser } from "@/hooks/useUser";
 
-export default async function FarmDashboardPage() {
-  await requireRole(["farm_owner", "admin"]);
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user!.id)
-    .single();
-
-  const { data: farms } = await supabase
-    .from("farms")
-    .select("id, name, is_published, submitted, rejection_reason")
-    .eq("owner_id", user!.id);
-
-  const publishedCount = farms?.filter((f) => f.is_published).length ?? 0;
-  const pendingCount =
-    farms?.filter((f) => f.submitted && !f.is_published).length ?? 0;
-  const draftCount =
-    farms?.filter((f) => !f.submitted && !f.is_published).length ?? 0;
-  const rejectedFarms = farms?.filter((f) => f.rejection_reason) ?? [];
-
-  const firstName = profile?.full_name?.split(" ")[0] ?? "there";
+export default function FarmDashboardPage() {
+  const { user, profile, loading: userLoading } = useUser();
+  const { farms, loading: farmsLoading } = useFarm(user?.id);
 
   const hours = new Date().getHours();
   const greeting =
@@ -55,6 +34,48 @@ export default async function FarmDashboardPage() {
   });
   const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
 
+  // Derived counts from hook data
+  const publishedCount = farms.filter((f) => f.is_published).length;
+  const pendingCount = farms.filter(
+    (f) => !f.is_published && f.submitted && !f.rejection_reason,
+  ).length;
+  const draftCount = farms.filter(
+    (f) => !f.submitted && !f.is_published,
+  ).length;
+  const rejectedFarms = farms.filter((f) => !!f.rejection_reason);
+
+  // Checklist is driven by the first farm's real data (if any)
+  const firstFarm = farms[0] ?? null;
+  const checklist = [
+    { label: "Grundläggande information", done: !!firstFarm?.name },
+    {
+      label: "Kontaktuppgifter",
+      done: !!firstFarm?.contact_email || !!firstFarm?.contact_number,
+    },
+    { label: "Omslagsbild uppladdad", done: !!firstFarm?.cover_image_url },
+    {
+      label: "Öppettider angivna",
+      done: (firstFarm?.opening_hours?.length ?? 0) > 0,
+    },
+    {
+      label: "Produkter tillagda",
+      done: (firstFarm?.products?.length ?? 0) > 0,
+    },
+  ];
+
+  const loading = userLoading || farmsLoading;
+
+  if (loading) {
+    return (
+      <main className="flex-1 w-full flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-soil/40">
+          <Store className="w-10 h-10 animate-pulse" />
+          <p className="text-sm font-body">Laddar din dashboard...</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1 w-full">
       <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
@@ -62,18 +83,13 @@ export default async function FarmDashboardPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h2 className="text-4xl font-bold tracking-tight text-soil font-display">
-              {greeting}, {firstName}
+              {greeting}, {profile?.full_name?.split(" ")[0] ?? ""}
             </h2>
             <p className="text-slate-500 font-medium mt-1 font-body">
               {todayCapitalized}
             </p>
           </div>
-          <div className="flex gap-3 font-body">
-            <button className="flex items-center gap-2 bg-moss px-4 py-2 rounded-lg text-sm font-bold text-white hover:brightness-110 shadow-lg shadow-moss/20 transition-all focus:ring-2 focus:ring-wheat outline-none">
-              <Plus className="w-4 h-4" />
-              Ny Gård
-            </button>
-          </div>
+          <FarmPageActions />
         </div>
 
         {/* Rejection Alert */}
@@ -89,6 +105,18 @@ export default async function FarmDashboardPage() {
               <p className="text-xs text-red-600 mt-0.5">
                 Granska feedback och uppdatera din ansökan.
               </p>
+              {rejectedFarms.map(
+                (f) =>
+                  f.rejection_reason && (
+                    <p
+                      key={f.id}
+                      className="text-xs text-red-700 mt-1 font-medium"
+                    >
+                      <span className="font-bold">{f.name}:</span>{" "}
+                      {f.rejection_reason}
+                    </p>
+                  ),
+              )}
             </div>
           </div>
         )}
@@ -157,13 +185,13 @@ export default async function FarmDashboardPage() {
               </h3>
               <Link
                 className="text-sm font-bold text-moss hover:underline font-body"
-                href="#"
+                href="/dashboard/farm/farms"
               >
                 Se alla
               </Link>
             </div>
             <div className="overflow-x-auto">
-              {farms && farms.length > 0 ? (
+              {farms.length > 0 ? (
                 <table className="w-full text-left font-body">
                   <thead className="bg-soil/5 text-soil/60 uppercase text-[10px] font-bold tracking-wider">
                     <tr>
@@ -199,10 +227,15 @@ export default async function FarmDashboardPage() {
                       return (
                         <tr
                           key={farm.id}
-                          className="hover:bg-soil/2 transition-colors"
+                          className="hover:bg-soil/[0.02] transition-colors"
                         >
-                          <td className="px-6 py-4 font-bold text-soil">
-                            {farm.name}
+                          <td className="px-6 py-4">
+                            <p className="font-bold text-soil">{farm.name}</p>
+                            {farm.location_label && (
+                              <p className="text-xs text-slate-400 mt-0.5">
+                                {farm.location_label}
+                              </p>
+                            )}
                           </td>
                           <td className="px-6 py-4 text-center">
                             <span
@@ -246,8 +279,9 @@ export default async function FarmDashboardPage() {
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {/* Right Column */}
           <div className="space-y-6">
+            {/* Quick Actions */}
             <div className="bg-soil text-white p-6 rounded-xl shadow-lg">
               <h3 className="text-xl font-bold mb-4 font-display">
                 Snabbåtgärder
@@ -285,19 +319,16 @@ export default async function FarmDashboardPage() {
               </div>
             </div>
 
-            {/* Submission checklist */}
+            {/* Submission Checklist — driven by first farm's real data */}
             <div className="bg-white p-6 rounded-xl border border-soil/5 shadow-sm font-body">
-              <h3 className="text-lg font-bold text-soil mb-4 font-display">
+              <h3 className="text-lg font-bold text-soil mb-1 font-display">
                 Checklista för Publicering
               </h3>
+              {firstFarm && (
+                <p className="text-xs text-slate-400 mb-4">{firstFarm.name}</p>
+              )}
               <div className="space-y-3">
-                {[
-                  { done: true, label: "Grundläggande information" },
-                  { done: true, label: "Kontaktuppgifter" },
-                  { done: false, label: "Omslagsbild uppladdad" },
-                  { done: false, label: "Öppettider angivna" },
-                  { done: false, label: "Produkter tillagda" },
-                ].map(({ done, label }) => (
+                {checklist.map(({ done, label }) => (
                   <div key={label} className="flex items-center gap-3">
                     <div
                       className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${done ? "bg-moss" : "bg-soil/10"}`}
@@ -312,8 +343,13 @@ export default async function FarmDashboardPage() {
                   </div>
                 ))}
               </div>
-              <button className="mt-4 w-full flex items-center justify-center gap-2 bg-moss/10 text-moss rounded-lg py-2 text-sm font-bold hover:bg-moss/20 transition-all">
-                Skicka in för Granskning
+              <button
+                disabled={!firstFarm || firstFarm.submitted}
+                className="mt-4 w-full flex items-center justify-center gap-2 bg-moss/10 text-moss rounded-lg py-2 text-sm font-bold hover:bg-moss/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {firstFarm?.submitted
+                  ? "Inskickad för granskning"
+                  : "Skicka in för Granskning"}
               </button>
             </div>
           </div>
