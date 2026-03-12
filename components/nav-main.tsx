@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -8,8 +7,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { CirclePlusIcon, MailIcon } from "lucide-react";
+import { CirclePlusIcon } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 export function NavMain({
   items,
@@ -21,6 +22,7 @@ export function NavMain({
   }[];
 }) {
   const { isAdmin, isFarmOwner } = useUser();
+  const pathname = usePathname();
 
   return (
     <SidebarGroup>
@@ -38,15 +40,27 @@ export function NavMain({
             ) : null}
           </SidebarMenuItem>
         </SidebarMenu>
+
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon}
-                <span>{item.title}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            // Exact match for root dashboard pages, prefix match for sub-pages
+            const isActive = item.url === pathname;
+
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  isActive={isActive}
+                  asChild
+                >
+                  <Link href={item.url}>
+                    {item.icon}
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

@@ -83,7 +83,7 @@ export default function UserDashboardPage() {
         <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-soil/10 pb-8">
           <div className="flex items-center gap-6">
             {/* Avatar */}
-            <div className="relative w-28 h-28 rounded-3xl overflow-hidden border-4 border-white shadow-xl flex-shrink-0">
+            <div className="relative w-28 h-28 rounded-3xl overflow-hidden border-4 border-white shadow-xl shrink-0">
               {profile?.avatar_url ? (
                 <Image
                   src={profile.avatar_url}
@@ -293,7 +293,7 @@ export default function UserDashboardPage() {
                   key={farm.id}
                   className="flex bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
                 >
-                  <div className="w-28 flex-shrink-0 relative bg-moss/10 min-h-[5rem]">
+                  <div className="w-28 shrink-0 relative bg-moss/10 min-h-20">
                     {farm.cover_image_url ? (
                       <Image
                         src={farm.cover_image_url}

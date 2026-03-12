@@ -32,6 +32,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Trees } from "lucide-react";
 
 const adminNav = [
   { title: "Dashboard", url: "/dashboard/admin", icon: <IconDashboard /> },
@@ -53,8 +54,13 @@ const adminNav = [
 ];
 
 const farmOwnerNav = [
-  { title: "My Farms", url: "/dashboard/farm", icon: <IconBuildingStore /> },
-  { title: "Products", url: "/dashboard/farm/products", icon: <IconPackage /> },
+  { title: "Dashbaord", url: "/dashboard/farm", icon: <IconBuildingStore /> },
+  {
+    title: "My Farms",
+    url: "/dashboard/farm/my-farms",
+    icon: <Trees />,
+  },
+  { title: "Products", url: "/dashboard/farm/product", icon: <IconPackage /> },
   { title: "Images", url: "/dashboard/farm/images", icon: <IconPhoto /> },
   {
     title: "Opening Hours",
