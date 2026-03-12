@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '../lib/supabase/clients'
+import { createClient } from '../lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import type { Database } from '../lib/supabase/database.types'
 import type { Enums } from '../lib/supabase/database.types'

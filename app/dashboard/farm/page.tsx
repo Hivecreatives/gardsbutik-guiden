@@ -1,6 +1,3 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   ArrowRight,
   Box,
@@ -59,285 +56,269 @@ export default async function FarmDashboardPage() {
   const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "16rem",
-          "--header-height": "4rem",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar />
-      <SidebarInset className="bg-cream dark:bg-[#171b18] text-slate-900 dark:text-slate-100 font-body min-h-screen border-none overflow-x-hidden">
-        <SiteHeader />
+    <main className="flex-1 w-full">
+      <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
+        {/* Welcome Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h2 className="text-4xl font-bold tracking-tight text-soil font-display">
+              {greeting}, {firstName}
+            </h2>
+            <p className="text-slate-500 font-medium mt-1 font-body">
+              {todayCapitalized}
+            </p>
+          </div>
+          <div className="flex gap-3 font-body">
+            <button className="flex items-center gap-2 bg-moss px-4 py-2 rounded-lg text-sm font-bold text-white hover:brightness-110 shadow-lg shadow-moss/20 transition-all focus:ring-2 focus:ring-wheat outline-none">
+              <Plus className="w-4 h-4" />
+              Ny Gård
+            </button>
+          </div>
+        </div>
 
-        <main className="flex-1 w-full">
-          <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
-            {/* Welcome Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div>
-                <h2 className="text-4xl font-bold tracking-tight text-soil font-display">
-                  {greeting}, {firstName}
-                </h2>
-                <p className="text-slate-500 font-medium mt-1 font-body">
-                  {todayCapitalized}
-                </p>
-              </div>
-              <div className="flex gap-3 font-body">
-                <button className="flex items-center gap-2 bg-moss px-4 py-2 rounded-lg text-sm font-bold text-white hover:brightness-110 shadow-lg shadow-moss/20 transition-all focus:ring-2 focus:ring-wheat outline-none">
-                  <Plus className="w-4 h-4" />
-                  Ny Gård
-                </button>
-              </div>
-            </div>
-
-            {/* Rejection Alert */}
-            {rejectedFarms.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-                <TriangleAlert className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-red-700">
-                    {rejectedFarms.length} gård
-                    {rejectedFarms.length > 1 ? "ar" : ""} avvisad
-                    {rejectedFarms.length > 1 ? "e" : ""}
-                  </p>
-                  <p className="text-xs text-red-600 mt-0.5">
-                    Granska feedback och uppdatera din ansökan.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Stat Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white dark:bg-slate-800/50 p-6 rounded-xl border border-soil/5 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-2 bg-moss/10 rounded-lg text-moss">
-                    <Store className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">
-                    Publicerade
-                  </span>
-                </div>
-                <p className="text-slate-500 text-sm font-medium font-body">
-                  Publicerade Gårdar
-                </p>
-                <p className="text-3xl font-display font-bold text-soil mt-1">
-                  {publishedCount}
-                </p>
-              </div>
-
-              <div className="bg-wheat/10 dark:bg-wheat/20 p-6 rounded-xl border border-wheat/30 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-2 bg-wheat text-white rounded-lg">
-                    <Clock className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-bold text-wheat bg-white px-2 py-1 rounded">
-                    Väntar
-                  </span>
-                </div>
-                <p className="text-soil/70 text-sm font-medium font-body">
-                  Väntar på Godkännande
-                </p>
-                <p className="text-3xl font-display font-bold text-soil mt-1">
-                  {pendingCount}
-                </p>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800/50 p-6 rounded-xl border border-soil/5 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-2 bg-slate-100 rounded-lg text-slate-500">
-                    <PencilLine className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded">
-                    Utkast
-                  </span>
-                </div>
-                <p className="text-slate-500 text-sm font-medium font-body">
-                  Utkast
-                </p>
-                <p className="text-3xl font-display font-bold text-soil mt-1">
-                  {draftCount}
-                </p>
-              </div>
-            </div>
-
-            {/* Bottom Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* My Farms Table */}
-              <div className="lg:col-span-2 bg-white dark:bg-slate-800/50 rounded-xl border border-soil/5 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-soil/5 flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-soil font-display">
-                    Mina Gårdar
-                  </h3>
-                  <Link
-                    className="text-sm font-bold text-moss hover:underline font-body"
-                    href="#"
-                  >
-                    Se alla
-                  </Link>
-                </div>
-                <div className="overflow-x-auto">
-                  {farms && farms.length > 0 ? (
-                    <table className="w-full text-left font-body">
-                      <thead className="bg-soil/5 text-soil/60 uppercase text-[10px] font-bold tracking-wider">
-                        <tr>
-                          <th className="px-6 py-4">Gårdsnamn</th>
-                          <th className="px-6 py-4 text-center">Status</th>
-                          <th className="px-6 py-4 text-right">Åtgärder</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-soil/5">
-                        {farms.map((farm) => {
-                          const status = farm.is_published
-                            ? "published"
-                            : farm.rejection_reason
-                              ? "rejected"
-                              : farm.submitted
-                                ? "pending"
-                                : "draft";
-
-                          const badge = {
-                            published: "bg-emerald-100 text-emerald-800",
-                            pending: "bg-amber-100 text-amber-800",
-                            draft: "bg-stone-100 text-stone-500",
-                            rejected: "bg-red-100 text-red-800",
-                          }[status];
-
-                          const label = {
-                            published: "Publicerad",
-                            pending: "Väntar",
-                            draft: "Utkast",
-                            rejected: "Avvisad",
-                          }[status];
-
-                          return (
-                            <tr
-                              key={farm.id}
-                              className="hover:bg-soil/2 transition-colors"
-                            >
-                              <td className="px-6 py-4 font-bold text-soil">
-                                {farm.name}
-                              </td>
-                              <td className="px-6 py-4 text-center">
-                                <span
-                                  className={`inline-flex px-2 py-1 rounded text-[10px] font-bold uppercase ${badge}`}
-                                >
-                                  {label}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-2">
-                                  <button
-                                    className="p-1.5 text-slate-500 hover:bg-slate-50 rounded"
-                                    title="Redigera"
-                                  >
-                                    <PencilLine className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    className="p-1.5 text-moss hover:bg-moss/10 rounded"
-                                    title="Förhandsgranska"
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="p-12 text-center">
-                      <Store className="w-10 h-10 text-soil/20 mx-auto mb-3" />
-                      <p className="text-slate-500 text-sm">
-                        Du har inga gårdar ännu.
-                      </p>
-                      <button className="mt-4 flex items-center gap-2 bg-moss text-white px-4 py-2 rounded-lg text-sm font-bold mx-auto hover:brightness-110 transition-all">
-                        <Plus className="w-4 h-4" /> Lägg till din första gård
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="space-y-6">
-                <div className="bg-soil text-white p-6 rounded-xl shadow-lg">
-                  <h3 className="text-xl font-bold mb-4 font-display">
-                    Snabbåtgärder
-                  </h3>
-                  <div className="space-y-3 font-body">
-                    {[
-                      {
-                        icon: <Plus className="w-4 h-4" />,
-                        label: "Lägg till Gård",
-                      },
-                      {
-                        icon: <Package className="w-4 h-4" />,
-                        label: "Hantera Produkter",
-                      },
-                      {
-                        icon: <Image className="w-4 h-4" />,
-                        label: "Ladda upp Bilder",
-                      },
-                      {
-                        icon: <MapPin className="w-4 h-4" />,
-                        label: "Uppdatera Plats",
-                      },
-                    ].map(({ icon, label }) => (
-                      <button
-                        key={label}
-                        className="w-full flex items-center justify-between p-3 rounded-lg bg-white/10 hover:bg-wheat hover:text-soil transition-all outline-none focus:ring-2 focus:ring-wheat"
-                      >
-                        <div className="flex items-center gap-2">
-                          {icon}
-                          <span className="font-medium">{label}</span>
-                        </div>
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Submission checklist */}
-                <div className="bg-white p-6 rounded-xl border border-soil/5 shadow-sm font-body">
-                  <h3 className="text-lg font-bold text-soil mb-4 font-display">
-                    Checklista för Publicering
-                  </h3>
-                  <div className="space-y-3">
-                    {[
-                      { done: true, label: "Grundläggande information" },
-                      { done: true, label: "Kontaktuppgifter" },
-                      { done: false, label: "Omslagsbild uppladdad" },
-                      { done: false, label: "Öppettider angivna" },
-                      { done: false, label: "Produkter tillagda" },
-                    ].map(({ done, label }) => (
-                      <div key={label} className="flex items-center gap-3">
-                        <div
-                          className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${done ? "bg-moss" : "bg-soil/10"}`}
-                        >
-                          {done && (
-                            <CircleCheck className="w-3 h-3 text-white" />
-                          )}
-                        </div>
-                        <span
-                          className={`text-sm ${done ? "text-soil font-medium" : "text-slate-400"}`}
-                        >
-                          {label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <button className="mt-4 w-full flex items-center justify-center gap-2 bg-moss/10 text-moss rounded-lg py-2 text-sm font-bold hover:bg-moss/20 transition-all">
-                    Skicka in för Granskning
-                  </button>
-                </div>
-              </div>
+        {/* Rejection Alert */}
+        {rejectedFarms.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+            <TriangleAlert className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-red-700">
+                {rejectedFarms.length} gård
+                {rejectedFarms.length > 1 ? "ar" : ""} avvisad
+                {rejectedFarms.length > 1 ? "e" : ""}
+              </p>
+              <p className="text-xs text-red-600 mt-0.5">
+                Granska feedback och uppdatera din ansökan.
+              </p>
             </div>
           </div>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+        )}
+
+        {/* Stat Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white dark:bg-slate-800/50 p-6 rounded-xl border border-soil/5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-2 bg-moss/10 rounded-lg text-moss">
+                <Store className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">
+                Publicerade
+              </span>
+            </div>
+            <p className="text-slate-500 text-sm font-medium font-body">
+              Publicerade Gårdar
+            </p>
+            <p className="text-3xl font-display font-bold text-soil mt-1">
+              {publishedCount}
+            </p>
+          </div>
+
+          <div className="bg-wheat/10 dark:bg-wheat/20 p-6 rounded-xl border border-wheat/30 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-2 bg-wheat text-white rounded-lg">
+                <Clock className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-wheat bg-white px-2 py-1 rounded">
+                Väntar
+              </span>
+            </div>
+            <p className="text-soil/70 text-sm font-medium font-body">
+              Väntar på Godkännande
+            </p>
+            <p className="text-3xl font-display font-bold text-soil mt-1">
+              {pendingCount}
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800/50 p-6 rounded-xl border border-soil/5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-2 bg-slate-100 rounded-lg text-slate-500">
+                <PencilLine className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded">
+                Utkast
+              </span>
+            </div>
+            <p className="text-slate-500 text-sm font-medium font-body">
+              Utkast
+            </p>
+            <p className="text-3xl font-display font-bold text-soil mt-1">
+              {draftCount}
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* My Farms Table */}
+          <div className="lg:col-span-2 bg-white dark:bg-slate-800/50 rounded-xl border border-soil/5 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-soil/5 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-soil font-display">
+                Mina Gårdar
+              </h3>
+              <Link
+                className="text-sm font-bold text-moss hover:underline font-body"
+                href="#"
+              >
+                Se alla
+              </Link>
+            </div>
+            <div className="overflow-x-auto">
+              {farms && farms.length > 0 ? (
+                <table className="w-full text-left font-body">
+                  <thead className="bg-soil/5 text-soil/60 uppercase text-[10px] font-bold tracking-wider">
+                    <tr>
+                      <th className="px-6 py-4">Gårdsnamn</th>
+                      <th className="px-6 py-4 text-center">Status</th>
+                      <th className="px-6 py-4 text-right">Åtgärder</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-soil/5">
+                    {farms.map((farm) => {
+                      const status = farm.is_published
+                        ? "published"
+                        : farm.rejection_reason
+                          ? "rejected"
+                          : farm.submitted
+                            ? "pending"
+                            : "draft";
+
+                      const badge = {
+                        published: "bg-emerald-100 text-emerald-800",
+                        pending: "bg-amber-100 text-amber-800",
+                        draft: "bg-stone-100 text-stone-500",
+                        rejected: "bg-red-100 text-red-800",
+                      }[status];
+
+                      const label = {
+                        published: "Publicerad",
+                        pending: "Väntar",
+                        draft: "Utkast",
+                        rejected: "Avvisad",
+                      }[status];
+
+                      return (
+                        <tr
+                          key={farm.id}
+                          className="hover:bg-soil/2 transition-colors"
+                        >
+                          <td className="px-6 py-4 font-bold text-soil">
+                            {farm.name}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span
+                              className={`inline-flex px-2 py-1 rounded text-[10px] font-bold uppercase ${badge}`}
+                            >
+                              {label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                className="p-1.5 text-slate-500 hover:bg-slate-50 rounded"
+                                title="Redigera"
+                              >
+                                <PencilLine className="w-4 h-4" />
+                              </button>
+                              <button
+                                className="p-1.5 text-moss hover:bg-moss/10 rounded"
+                                title="Förhandsgranska"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="p-12 text-center">
+                  <Store className="w-10 h-10 text-soil/20 mx-auto mb-3" />
+                  <p className="text-slate-500 text-sm">
+                    Du har inga gårdar ännu.
+                  </p>
+                  <button className="mt-4 flex items-center gap-2 bg-moss text-white px-4 py-2 rounded-lg text-sm font-bold mx-auto hover:brightness-110 transition-all">
+                    <Plus className="w-4 h-4" /> Lägg till din första gård
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="space-y-6">
+            <div className="bg-soil text-white p-6 rounded-xl shadow-lg">
+              <h3 className="text-xl font-bold mb-4 font-display">
+                Snabbåtgärder
+              </h3>
+              <div className="space-y-3 font-body">
+                {[
+                  {
+                    icon: <Plus className="w-4 h-4" />,
+                    label: "Lägg till Gård",
+                  },
+                  {
+                    icon: <Package className="w-4 h-4" />,
+                    label: "Hantera Produkter",
+                  },
+                  {
+                    icon: <Image className="w-4 h-4" />,
+                    label: "Ladda upp Bilder",
+                  },
+                  {
+                    icon: <MapPin className="w-4 h-4" />,
+                    label: "Uppdatera Plats",
+                  },
+                ].map(({ icon, label }) => (
+                  <button
+                    key={label}
+                    className="w-full flex items-center justify-between p-3 rounded-lg bg-white/10 hover:bg-wheat hover:text-soil transition-all outline-none focus:ring-2 focus:ring-wheat"
+                  >
+                    <div className="flex items-center gap-2">
+                      {icon}
+                      <span className="font-medium">{label}</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Submission checklist */}
+            <div className="bg-white p-6 rounded-xl border border-soil/5 shadow-sm font-body">
+              <h3 className="text-lg font-bold text-soil mb-4 font-display">
+                Checklista för Publicering
+              </h3>
+              <div className="space-y-3">
+                {[
+                  { done: true, label: "Grundläggande information" },
+                  { done: true, label: "Kontaktuppgifter" },
+                  { done: false, label: "Omslagsbild uppladdad" },
+                  { done: false, label: "Öppettider angivna" },
+                  { done: false, label: "Produkter tillagda" },
+                ].map(({ done, label }) => (
+                  <div key={label} className="flex items-center gap-3">
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${done ? "bg-moss" : "bg-soil/10"}`}
+                    >
+                      {done && <CircleCheck className="w-3 h-3 text-white" />}
+                    </div>
+                    <span
+                      className={`text-sm ${done ? "text-soil font-medium" : "text-slate-400"}`}
+                    >
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <button className="mt-4 w-full flex items-center justify-center gap-2 bg-moss/10 text-moss rounded-lg py-2 text-sm font-bold hover:bg-moss/20 transition-all">
+                Skicka in för Granskning
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
