@@ -12,5 +12,5 @@ export async function POST() {
     ? `https://${headersList.get('x-forwarded-host')}`
     : process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
-  return NextResponse.redirect(new URL('/login', origin))
+  return NextResponse.redirect(new URL('/', origin))
 }
