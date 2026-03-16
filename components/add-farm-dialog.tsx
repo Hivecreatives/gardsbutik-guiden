@@ -92,7 +92,7 @@ export function AddFarmDialog({
         location_label: locationLabel || null,
         region_id: regionId || null,
         cover_image_url: FarmImage,
-        submitted: false,
+        submitted: true,
         is_published: false,
       },
       selectedCategories,
@@ -296,7 +296,7 @@ export function AddFarmDialog({
               ) : (
                 <Store className="w-4 h-4" />
               )}
-              Spara som utkast
+              Godkännande
             </button>
           </DialogFooter>
         </form>
