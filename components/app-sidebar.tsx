@@ -42,6 +42,11 @@ const adminNav = [
     icon: <IconListDetails />,
   },
   {
+    title: "All farms",
+    url: "/dashboard/admin/all-farms",
+    icon: <IconBuildingStore />,
+  },
+  {
     title: "Analytics",
     url: "/dashboard/admin/analytics",
     icon: <IconChartBar />,

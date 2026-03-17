@@ -1,6 +1,5 @@
 "use client";
 
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   ArrowRight,
   Bookmark,

@@ -23,8 +23,10 @@ import {
   Tag,
   Clock,
 } from "lucide-react";
-import NextImage from "next/image";
+
 import { approveFarm, rejectFarm } from "@/app/actions/farm-approval";
+import Image from "next/image";
+import { Separator } from "../ui/separator";
 
 export type FarmForApproval = {
   id: string;
@@ -138,11 +140,11 @@ export function ViewFarmForApproval({ farm }: Props) {
       </button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto font-body p-6">
+        <DialogContent className="max-w-[90vw] w-full lg:max-w-3xl max-h-[90vh] overflow-y-auto font-body p-6">
           {/* Cover image */}
           <div className="relative w-full h-48 rounded-t-lg overflow-hidden">
             {farm.cover_image_url ? (
-              <NextImage
+              <Image
                 src={farm.cover_image_url}
                 alt={farm.name}
                 fill
@@ -186,18 +188,19 @@ export function ViewFarmForApproval({ farm }: Props) {
 
             {/* Owner Information */}
             <section className="border-b pb-4">
-              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 font-display text-soil">
+              <h3 className="font-semibold text-lg mb-2 flex items-center gap-2 font-display text-soil">
                 <User className="w-5 h-5 text-blue-600" />
                 Ägarinformation
               </h3>
+              <Separator className="mb-3" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                     Ägarens namn
                   </p>
-                  {(farm.owner?.full_name ?? farm.owner_name) ? (
+                  {farm.owner_name ? (
                     <p className="text-sm font-medium mt-1">
-                      {farm.owner?.full_name ?? farm.owner_name}
+                      {farm.owner_name}
                     </p>
                   ) : (
                     <Empty text="Inget namn angivet" />
@@ -258,10 +261,11 @@ export function ViewFarmForApproval({ farm }: Props) {
 
             {/* Location */}
             <section className="border-b pb-4">
-              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 font-display text-soil">
+              <h3 className="font-semibold text-lg mb-2 flex items-center gap-2 font-display text-soil">
                 <MapPin className="w-5 h-5 text-red-500" />
                 Platsinformation
               </h3>
+              <Separator className="mb-3" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
@@ -316,10 +320,11 @@ export function ViewFarmForApproval({ farm }: Props) {
 
             {/* Opening Hours */}
             <section className="border-b pb-4">
-              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 font-display text-soil">
+              <h3 className="font-semibold text-lg mb-2 flex items-center gap-2 font-display text-soil">
                 <Clock className="w-5 h-5 text-amber-500" />
                 Öppettider
               </h3>
+              <Separator className="mb-3" />
               {openingHours.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {openingHours.map((h) => (
@@ -359,7 +364,7 @@ export function ViewFarmForApproval({ farm }: Props) {
                       key={i}
                       className="relative aspect-square rounded-lg overflow-hidden bg-gray-100"
                     >
-                      <NextImage
+                      <Image
                         src={img.url}
                         alt={img.caption ?? `Bild ${i + 1}`}
                         fill
@@ -471,7 +476,7 @@ export function ViewFarmForApproval({ farm }: Props) {
                   </button>
                   <button
                     onClick={handleReject}
-                    disabled={isPending || !reason.trim()}
+                    disabled={isPending}
                     className="flex items-center gap-2 bg-red-600 px-5 py-2 rounded-lg text-sm font-bold text-white hover:brightness-110 transition-all disabled:opacity-60"
                   >
                     {isPending ? (

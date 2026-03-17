@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { useFarm } from "@/hooks/useFarm";
+import { createClient } from "@/lib/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +21,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Store } from "lucide-react";
+import {
+  FileUpload,
+  FileUploadDropzone,
+  FileUploadItem,
+  FileUploadItemDelete,
+  FileUploadItemMetadata,
+  FileUploadItemPreview,
+  FileUploadList,
+} from "@/components/ui/file-upload";
+import { Loader2, Store, X, ImageIcon, Images } from "lucide-react";
+
+const MAX_SIZE = 1 * 1024 * 1024; // 1 MB
 
 interface AddFarmDialogProps {
   open: boolean;
@@ -40,6 +52,7 @@ export function AddFarmDialog({
     allCategories,
     error: hookError,
   } = useFarm(user?.id);
+  const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,8 +66,12 @@ export function AddFarmDialog({
   const [fullAddress, setFullAddress] = useState("");
   const [locationLabel, setLocationLabel] = useState("");
   const [regionId, setRegionId] = useState("");
-  const [FarmImage, setFarmImage] = useState<string>("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  // Image state
+  const [coverFiles, setCoverFiles] = useState<File[]>([]);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
   const toggleCategory = (id: string) => {
     setSelectedCategories((prev) =>
@@ -71,43 +88,100 @@ export function AddFarmDialog({
     setFullAddress("");
     setLocationLabel("");
     setRegionId("");
-    setFarmImage("");
     setSelectedCategories([]);
+    setCoverFiles([]);
+    setGalleryFiles([]);
     setError(null);
+    setUploadProgress(null);
+  };
+
+  // Upload a single file to a bucket, returns public URL
+  const uploadFile = async (
+    file: File,
+    bucket: string,
+    path: string,
+  ): Promise<string> => {
+    const { error } = await supabase.storage.from(bucket).upload(path, file, {
+      cacheControl: "3600",
+      upsert: true,
+    });
+    if (error) throw new Error(`Uppladdning misslyckades: ${error.message}`);
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    return data.publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setLoading(true);
     setError(null);
 
-    const farm = await addFarm(
-      {
-        name,
-        farm_type: farmType || null,
-        owner_name: ownerName || null,
-        contact_number: contactNumber || null,
-        contact_email: contactEmail || null,
-        full_address: fullAddress || null,
-        location_label: locationLabel || null,
-        region_id: regionId || null,
-        cover_image_url: FarmImage,
-        submitted: true,
-        is_published: false,
-      },
-      selectedCategories,
-    );
+    try {
+      // 1. Upload cover image if provided
+      let coverImageUrl: string | null = null;
+      if (coverFiles[0]) {
+        setUploadProgress("Laddar upp omslagsbild...");
+        const ext = coverFiles[0].name.split(".").pop();
+        coverImageUrl = await uploadFile(
+          coverFiles[0],
+          "farm-covers",
+          `${user.id}/${Date.now()}-cover.${ext}`,
+        );
+      }
 
-    setLoading(false);
+      // 2. Create the farm
+      setUploadProgress("Sparar gård...");
+      const farm = await addFarm(
+        {
+          name,
+          farm_type: farmType || null,
+          owner_name: ownerName || null,
+          contact_number: contactNumber || null,
+          contact_email: contactEmail || null,
+          full_address: fullAddress || null,
+          location_label: locationLabel || null,
+          region_id: regionId || null,
+          cover_image_url: coverImageUrl,
+          submitted: true,
+          is_published: false,
+        },
+        selectedCategories,
+      );
 
-    if (!farm) {
-      setError(hookError ?? "Kunde inte spara gården.");
-      return;
+      if (!farm) throw new Error(hookError ?? "Kunde inte spara gården.");
+
+      // 3. Upload gallery images and insert into farm_images table
+      if (galleryFiles.length > 0) {
+        setUploadProgress(`Laddar upp ${galleryFiles.length} galleribilder...`);
+        const galleryUrls = await Promise.all(
+          galleryFiles.map((file, i) => {
+            const ext = file.name.split(".").pop();
+            return uploadFile(
+              file,
+              "farm-gallery",
+              `${user.id}/${farm.id}/${Date.now()}-${i}.${ext}`,
+            );
+          }),
+        );
+
+        await supabase.from("farm_images").insert(
+          galleryUrls.map((url, i) => ({
+            farm_id: farm.id,
+            url,
+            sort_order: i,
+          })),
+        );
+      }
+
+      resetForm();
+      onOpenChange(false);
+      onSuccess?.(farm.id);
+    } catch (err: any) {
+      setError(err.message ?? "Något gick fel.");
+    } finally {
+      setLoading(false);
+      setUploadProgress(null);
     }
-
-    resetForm();
-    onOpenChange(false);
-    onSuccess?.(farm.id);
   };
 
   return (
@@ -133,6 +207,54 @@ export function AddFarmDialog({
             </div>
           )}
 
+          {/* Cover Image */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-moss" />
+              Omslagsbild
+              <span className="text-xs text-slate-400 font-normal">
+                (max 1 MB)
+              </span>
+            </Label>
+            <FileUpload
+              accept="image/jpeg,image/png,image/webp"
+              maxFiles={1}
+              maxSize={MAX_SIZE}
+              value={coverFiles}
+              onValueChange={setCoverFiles}
+              onFileReject={(_, msg) => setError(msg)}
+            >
+              <FileUploadDropzone className="border-soil/20 bg-cream/30 hover:bg-cream/60 data-dragging:border-moss data-dragging:bg-moss/5">
+                <div className="flex flex-col items-center gap-1 text-center">
+                  <ImageIcon className="w-8 h-8 text-soil/30" />
+                  <p className="text-sm font-medium text-soil/60">
+                    Dra hit eller klicka för att välja omslagsbild
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    JPG, PNG eller WebP · Max 1 MB
+                  </p>
+                </div>
+              </FileUploadDropzone>
+              <FileUploadList>
+                {coverFiles.map((file) => (
+                  <FileUploadItem
+                    key={file.name}
+                    value={file}
+                    className="border-soil/10 bg-cream/30"
+                  >
+                    <FileUploadItemPreview className="rounded-md border-soil/10" />
+                    <FileUploadItemMetadata />
+                    <FileUploadItemDelete asChild>
+                      <button className="ml-auto p-1 rounded hover:bg-soil/10 text-slate-400 hover:text-red-500 transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </FileUploadItemDelete>
+                  </FileUploadItem>
+                ))}
+              </FileUploadList>
+            </FileUpload>
+          </div>
+
           {/* Basic info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-1.5">
@@ -146,10 +268,9 @@ export function AddFarmDialog({
                 className="bg-cream/50 border-soil/20 focus-visible:ring-moss/40"
               />
             </div>
-
             <div className="space-y-1.5">
-              <Label htmlFor="farmType">Gårdstyp</Label>
-              <Select value={farmType} onValueChange={setFarmType}>
+              <Label htmlFor="farmType">Gårdstyp *</Label>
+              <Select value={farmType} onValueChange={setFarmType} required>
                 <SelectTrigger
                   id="farmType"
                   className="bg-cream/50 border-soil/20 w-full"
@@ -158,7 +279,6 @@ export function AddFarmDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {/* Farm types come from the categories table */}
                     {allCategories.map((c) => (
                       <SelectItem key={c.id} value={c.name}>
                         {c.name}
@@ -168,10 +288,9 @@ export function AddFarmDialog({
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-1.5">
-              <Label htmlFor="region">Region</Label>
-              <Select value={regionId} onValueChange={setRegionId}>
+              <Label htmlFor="region">Region *</Label>
+              <Select value={regionId} onValueChange={setRegionId} required>
                 <SelectTrigger
                   id="region"
                   className="bg-cream/50 border-soil/20 w-full"
@@ -194,9 +313,10 @@ export function AddFarmDialog({
           {/* Contact */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="ownerName">Ägarens namn</Label>
+              <Label htmlFor="ownerName">Ägarens namn *</Label>
               <Input
                 id="ownerName"
+                required
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
                 placeholder="Anna Larsson"
@@ -204,8 +324,9 @@ export function AddFarmDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="contactNumber">Telefonnummer</Label>
+              <Label htmlFor="contactNumber">Telefonnummer *</Label>
               <Input
+                required
                 id="contactNumber"
                 type="tel"
                 value={contactNumber}
@@ -215,8 +336,9 @@ export function AddFarmDialog({
               />
             </div>
             <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="contactEmail">E-post</Label>
+              <Label htmlFor="contactEmail">E-post *</Label>
               <Input
+                required
                 id="contactEmail"
                 type="email"
                 value={contactEmail}
@@ -230,8 +352,9 @@ export function AddFarmDialog({
           {/* Location */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="fullAddress">Fullständig adress</Label>
+              <Label htmlFor="fullAddress">Fullständig adress *</Label>
               <Input
+                required
                 id="fullAddress"
                 value={fullAddress}
                 onChange={(e) => setFullAddress(e.target.value)}
@@ -242,6 +365,7 @@ export function AddFarmDialog({
             <div className="md:col-span-2 space-y-1.5">
               <Label htmlFor="locationLabel">Platsnamn (kort)</Label>
               <Input
+                required
                 id="locationLabel"
                 value={locationLabel}
                 onChange={(e) => setLocationLabel(e.target.value)}
@@ -251,7 +375,7 @@ export function AddFarmDialog({
             </div>
           </div>
 
-          {/* Categories — multi-select pills from hook data */}
+          {/* Categories */}
           <div className="space-y-2">
             <Label>Kategorier</Label>
             <div className="flex flex-wrap gap-2">
@@ -275,6 +399,58 @@ export function AddFarmDialog({
             </div>
           </div>
 
+          {/* Gallery Images */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Images className="w-4 h-4 text-moss" />
+              Galleribilder
+              <span className="text-xs text-slate-400 font-normal">
+                (max 1 MB / bild · upp till 10 bilder)
+              </span>
+            </Label>
+            <FileUpload
+              accept="image/jpeg,image/png,image/webp"
+              maxFiles={10}
+              maxSize={MAX_SIZE}
+              multiple
+              value={galleryFiles}
+              onValueChange={setGalleryFiles}
+              onFileReject={(_, msg) => setError(msg)}
+            >
+              <FileUploadDropzone className="border-soil/20 bg-cream/30 hover:bg-cream/60 data-dragging:border-moss data-dragging:bg-moss/5">
+                <div className="flex flex-col items-center gap-1 text-center">
+                  <Images className="w-8 h-8 text-soil/30" />
+                  <p className="text-sm font-medium text-soil/60">
+                    Dra hit eller klicka för att välja galleribilder
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    JPG, PNG eller WebP · Max 1 MB per bild · Upp till 10 bilder
+                  </p>
+                </div>
+              </FileUploadDropzone>
+              <FileUploadList orientation="horizontal" className="mt-2">
+                {galleryFiles.map((file) => (
+                  <FileUploadItem
+                    key={file.name}
+                    value={file}
+                    className="w-28 flex-col items-center border-soil/10 bg-cream/30 p-2 gap-1"
+                  >
+                    <FileUploadItemPreview className="w-20 h-20 rounded-md border-soil/10" />
+                    <FileUploadItemMetadata
+                      size="sm"
+                      className="items-center text-center"
+                    />
+                    <FileUploadItemDelete asChild>
+                      <button className="absolute top-1 right-1 p-0.5 rounded-full bg-white/80 hover:bg-red-50 text-slate-400 hover:text-red-500 shadow transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </FileUploadItemDelete>
+                  </FileUploadItem>
+                ))}
+              </FileUploadList>
+            </FileUpload>
+          </div>
+
           <DialogFooter className="pt-2">
             <button
               type="button"
@@ -292,11 +468,16 @@ export function AddFarmDialog({
               className="flex items-center gap-2 bg-moss px-5 py-2 rounded-lg text-sm font-bold text-white hover:brightness-110 shadow-lg shadow-moss/20 transition-all disabled:opacity-60"
             >
               {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {uploadProgress ?? "Sparar..."}
+                </span>
               ) : (
-                <Store className="w-4 h-4" />
+                <span className="flex items-center gap-2">
+                  <Store className="w-4 h-4" />
+                  Skicka för godkännande
+                </span>
               )}
-              Godkännande
             </button>
           </DialogFooter>
         </form>
